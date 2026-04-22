@@ -28,6 +28,5 @@ jobs:
         working-directory: infra/terraform
 
       - name: Terraform Plan
-        run: terraform plan -var="ecr_image_uri=${{ secrets.ECR_IMAGE_URI }}"
+        run: terraform plan -var-file="terraform.ci.tfvars"
         working-directory: infra/terraform
-        ## Optional: Save the plan output for later use in apply step
