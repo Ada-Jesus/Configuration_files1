@@ -1,4 +1,4 @@
-vpc_id = "vpc-real-production-id"
+vpc_id = "vpc-0f686b508e3fef6ea"
 
 private_subnets = [
   "subnet-0ead1af7a12a686c8",
