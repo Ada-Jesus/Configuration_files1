@@ -20,7 +20,7 @@ variable "environment" {
   default     = "production"
 }
 
-# ─//─ Container configuration ───────────────────────────────────────
+# ─ Container configuration ───────────────────────────────────────
 variable "container_port" {
   description = "Port the container listens on (must match app + ALB + scripts)"
   type        = number
