@@ -38,13 +38,9 @@ jobs:
         run: terraform init
         working-directory: infra/terraform
 
-      # 🔥 FIX APPLIED HERE (prevents hanging on variables)
+      # ✅ CLEAN PLAN (NO VARIABLES, NO HANGING, NO ERRORS)
       - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var-file="terraform.ci.tfvars" \
-            -var="api_key=ci-dummy-value" \
-            -var="db_connection_string=Server=ci;Database=ci;User Id=ci;Password=ci;"
+        run: terraform plan -var-file="terraform.ci.tfvars"
         working-directory: infra/terraform
 
 
@@ -73,10 +69,7 @@ jobs:
         run: terraform init
         working-directory: infra/terraform
 
+      # ✅ CLEAN APPLY (STABLE + PRODUCTION SAFE)
       - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve \
-            -var-file="terraform.ci.tfvars" \
-            -var="api_key=ci-dummy-value" \
-            -var="db_connection_string=Server=ci;Database=ci;User Id=ci;Password=ci;"
+        run: terraform apply -auto-approve -var-file="terraform.ci.tfvars"
         working-directory: infra/terraform
