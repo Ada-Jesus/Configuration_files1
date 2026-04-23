@@ -175,7 +175,7 @@ resource "aws_ecs_service" "green" {
 }
 
 # ═══════════════════════════════════════════════════════════════
-# OUTPUTS
+# OUTPUTSsss
 # ═══════════════════════════════════════════════════════════════
 output "ecs_cluster_name" {
   value = aws_ecs_cluster.main.name
