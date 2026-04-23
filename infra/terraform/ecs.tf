@@ -14,14 +14,20 @@
 # ═══════════════════════════════════════════════════════════════
 # CloudWatch Log Group
 # ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# CLOUDWATCH LOG GROUP
+# ═══════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# CLOUDWATCH LOG GROUP
+# ═══════════════════════════════════════════════════════════════════
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${local.name_prefix}"
   retention_in_days = var.log_retention_days
 }
 
-# ═══════════════════════════════════════════════════════════════
-# ECS Cluster
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# ECS CLUSTER
+# ═══════════════════════════════════════════════════════════════════
 resource "aws_ecs_cluster" "main" {
   name = local.name_prefix
 
@@ -41,9 +47,9 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
   }
 }
 
-# ═══════════════════════════════════════════════════════════════
-# TASK DEFINITION (FIXED + STABLE)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# TASK DEFINITION (SSM ENABLED)
+# ═══════════════════════════════════════════════════════════════════
 resource "aws_ecs_task_definition" "app" {
   family                   = local.name_prefix
   network_mode             = "awsvpc"
@@ -79,9 +85,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
 
-      # ═══════════════════════════════════════════════
-      # SSM SECRETS (NOW VERIFIED WORKING)
-      # ═══════════════════════════════════════════════
+      # SSM SECRETS (WORKS NOW BECAUSE ENDPOINTS ARE IN vpc_endpoints.tf)
       secrets = [
         {
           name      = "ConnectionStrings__Default"
@@ -105,9 +109,9 @@ resource "aws_ecs_task_definition" "app" {
   ])
 }
 
-# ═══════════════════════════════════════════════════════════════
-# BLUE SERVICE
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# ECS SERVICE - BLUE
+# ═══════════════════════════════════════════════════════════════════
 resource "aws_ecs_service" "blue" {
   name            = "${local.name_prefix}-blue"
   cluster         = aws_ecs_cluster.main.id
@@ -117,11 +121,10 @@ resource "aws_ecs_service" "blue" {
   launch_type   = "FARGATE"
 
   network_configuration {
-    subnets          = var.private_subnets
-    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets         = var.private_subnets
+    security_groups = [aws_security_group.ecs_tasks.id]
 
-    # REQUIRED for SSM + ECR access (your current working setup)
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -140,9 +143,9 @@ resource "aws_ecs_service" "blue" {
   }
 }
 
-# ═══════════════════════════════════════════════════════════════
-# GREEN SERVICE
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# ECS SERVICE - GREEN
+# ═══════════════════════════════════════════════════════════════════
 resource "aws_ecs_service" "green" {
   name            = "${local.name_prefix}-green"
   cluster         = aws_ecs_cluster.main.id
@@ -152,10 +155,10 @@ resource "aws_ecs_service" "green" {
   launch_type   = "FARGATE"
 
   network_configuration {
-    subnets          = var.private_subnets
-    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets         = var.private_subnets
+    security_groups = [aws_security_group.ecs_tasks.id]
 
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -174,9 +177,9 @@ resource "aws_ecs_service" "green" {
   }
 }
 
-# ═══════════════════════════════════════════════════════════════
-# OUTPUTSsss
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# OUTPUTS
+# ═══════════════════════════════════════════════════════════════════
 output "ecs_cluster_name" {
   value = aws_ecs_cluster.main.name
 }

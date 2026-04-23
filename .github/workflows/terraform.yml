@@ -36,8 +36,9 @@ jobs:
         run: terraform init
         working-directory: infra/terraform
 
+      # ✅ SAFEGUARDED PLAN (IMPORTANT FIX)
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.ci.tfvars"
+        run: terraform plan -detailed-exitcode -var-file="terraform.ci.tfvars"
         working-directory: infra/terraform
 
 
@@ -66,6 +67,7 @@ jobs:
         run: terraform init
         working-directory: infra/terraform
 
+      # ✅ SAFE APPLY
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.ci.tfvars"
         working-directory: infra/terraform

@@ -13,4 +13,5 @@ public_subnets = [
 
 ecr_image_uri = "121023050297.dkr.ecr.us-east-1.amazonaws.com/aspnet-api-production:latest"
 
-environment = "ci"
+api_key              = "ci-dummy"
+db_connection_string = "Server=ci;Database=ci;"
