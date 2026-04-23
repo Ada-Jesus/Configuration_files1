@@ -40,19 +40,19 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 🔒 FORCE CONSISTENT BACKEND STATE
+      # 🔒 ENSURE SAME BACKEND STATE EVERY RUN
       - name: Terraform Init
         run: terraform init -reconfigure
 
-      # 🔒 ENSURE SINGLE WORKSPACE (NO DRIFT)
+      # 🔒 ENSURE SAME WORKSPACE EVERY TIME
       - name: Terraform Workspace
         run: terraform workspace select default || terraform workspace new default
 
-      # 🔍 VALIDATE CONFIG FIRST
+      # 🔍 VALIDATE CONFIG
       - name: Terraform Validate
         run: terraform validate
 
-      # 📋 PLAN USING SAME TFVARS EVERY TIME
+      # 📋 PLAN (NO INPUTS, NO DRIFT)
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.ci.tfvars" -lock-timeout=5m
 
@@ -88,6 +88,6 @@ jobs:
       - name: Terraform Workspace
         run: terraform workspace select default || terraform workspace new default
 
-      # 🚀 APPLY ONLY WHAT WAS PLANNED
+      # 🚀 APPLY ONLY PLANNED CHANGES
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.ci.tfvars" -lock-timeout=5m
