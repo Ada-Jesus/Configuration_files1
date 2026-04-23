@@ -1,12 +1,9 @@
-name: Terraform Pipeline
+name: 🏗️ Terraform Pipeline
 
 on:
   push:
     branches:
-      - infra
       - main
-    paths:
-      - 'infra/terraform/**'
 
 permissions:
   id-token: write
@@ -21,8 +18,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: infra
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -54,8 +49,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: infra
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
