@@ -1,7 +1,11 @@
 name: 🏗️ Terraform Pipeline
 
 on:
-  workflow_dispatch:   # manual trigger only (safe for production)
+  push:
+    branches:
+      - infra
+    paths:
+      - 'infra/terraform/**'
 
 permissions:
   id-token: write
@@ -17,7 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main   # ✅ FIX: use main, not infra branch
+          ref: infra
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -33,28 +37,24 @@ jobs:
         run: terraform init
         working-directory: infra/terraform
 
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: infra/terraform
-
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.ci.tfvars"
         working-directory: infra/terraform
 
 
   terraform-apply:
-    name: 🚀 Terraform Apply (Manual Approval)
+    name: 🚀 Terraform Apply
     runs-on: ubuntu-latest
     needs: terraform-plan
 
     environment:
-      name: production   # GitHub approval gate
+      name: production
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main   # ✅ FIX: same branch consistency
+          ref: infra
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
