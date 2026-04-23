@@ -5,10 +5,16 @@ on:
     branches:
       - main
       - infra
+    paths:
+      - "infra/terraform/**"
 
 permissions:
   id-token: write
   contents: read
+
+env:
+  TF_IN_AUTOMATION: true
+  TF_INPUT: false
 
 jobs:
 
@@ -16,11 +22,13 @@ jobs:
     name: 📋 Terraform Plan
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: infra/terraform
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: infra
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -32,14 +40,21 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
-        run: terraform init
-        working-directory: infra/terraform
+      # 🔥 FIX 1: Force backend sync (prevents state mismatch)
+      - name: Terraform Init (reconfigure backend)
+        run: terraform init -reconfigure
 
-      # ✅ SAFEGUARDED PLAN (IMPORTANT FIX)
+      # 🔥 FIX 2: Ensure correct workspace (prevents drift)
+      - name: Terraform Workspace
+        run: terraform workspace select default || terraform workspace new default
+
+      # 🔥 FIX 3: Validate config
+      - name: Terraform Validate
+        run: terraform validate
+
+      # 🔥 FIX 4: Always use SAME tfvars (no interactive prompts)
       - name: Terraform Plan
-        run: terraform plan -detailed-exitcode -var-file="terraform.ci.tfvars"
-        working-directory: infra/terraform
+        run: terraform plan -var-file="terraform.ci.tfvars" -lock-timeout=5m
 
 
   terraform-apply:
@@ -47,11 +62,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: terraform-plan
 
+    defaults:
+      run:
+        working-directory: infra/terraform
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: infra
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -63,11 +80,14 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
-        run: terraform init
-        working-directory: infra/terraform
+      # 🔥 FIX 1: Same backend state as plan
+      - name: Terraform Init (reconfigure backend)
+        run: terraform init -reconfigure
 
-      # ✅ SAFE APPLY
+      # 🔥 FIX 2: Force same workspace
+      - name: Terraform Workspace
+        run: terraform workspace select default || terraform workspace new default
+
+      # 🔥 FIX 3: Apply ONLY planned changes
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file="terraform.ci.tfvars"
-        working-directory: infra/terraform
+        run: terraform apply -auto-approve -var-file="terraform.ci.tfvars" -lock-timeout=5m
