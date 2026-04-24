@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════
-# security_groups.tf – ALB and ECS task security groups
+# security_groups.tf – ALB and ECS security groups (ONLY PLACE)
 # ═══════════════════════════════════════════════════════════════════
 
 # ── ALB Security Group ────────────────────────────────────────────
@@ -24,14 +24,11 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # ⚠️ Test listener - consider restricting to CI/CD IPs if possible
   ingress {
-    description = "Test listener (CI/CD only recommended)"
+    description = "Test listener"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-
-    # safer default: still open, but marked clearly
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -61,20 +58,15 @@ resource "aws_security_group" "ecs_tasks" {
     security_groups = [aws_security_group.alb.id]
   }
 
+  # 🔥 REQUIRED: outbound internet for ECR pull
   egress {
-    description = "Allow outbound (ECR, SSM, CloudWatch)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-# ── Outputs ───────────────────────────────────────────────────────
-output "alb_security_group_id" {
-  value = aws_security_group.alb.id
-}
-
-output "ecs_security_group_id" {
-  value = aws_security_group.ecs_tasks.id
+  tags = {
+    Name = "${local.name_prefix}-ecs-sg"
+  }
 }

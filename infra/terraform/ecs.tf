@@ -6,7 +6,7 @@ resource "aws_ecs_cluster" "main" {
 }
 
 # ═════════════════════════════════════════════════════
-# CLOUDWATCH LOG GROUP (MISSING IN YOUR FILE)
+# CLOUDWATCH LOG GROUP
 # ═════════════════════════════════════════════════════
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${local.name_prefix}"
@@ -14,7 +14,7 @@ resource "aws_cloudwatch_log_group" "ecs" {
 }
 
 # ═════════════════════════════════════════════════════
-# IAM ROLE (EXECUTION ROLE FIXED)
+# IAM ROLE
 # ═════════════════════════════════════════════════════
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${local.name_prefix}-task-exec-role"
@@ -37,7 +37,7 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_attach" {
 }
 
 # ═════════════════════════════════════════════════════
-# TASK DEFINITION (HARDENED)
+# TASK DEFINITION
 # ═════════════════════════════════════════════════════
 resource "aws_ecs_task_definition" "app" {
   family                   = "${local.name_prefix}"
@@ -51,9 +51,7 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name  = "aspnet-api"
-
-      # 🔥 FIX: prevent empty image issues
-      image = var.image_uri != "" ? var.image_uri : "public.ecr.aws/nginx/nginx:latest"
+      image = var.image_uri
 
       essential = true
 
@@ -87,29 +85,7 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 # ═════════════════════════════════════════════════════
-# SECURITY GROUP
-# ═════════════════════════════════════════════════════
-resource "aws_security_group" "ecs_tasks" {
-  name   = "${local.name_prefix}-ecs-sg"
-  vpc_id = var.vpc_id
-
-  ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-# ═════════════════════════════════════════════════════
-# BLUE SERVICE
+# ECS SERVICE - BLUE
 # ═════════════════════════════════════════════════════
 resource "aws_ecs_service" "blue" {
   name            = "${local.name_prefix}-blue"
@@ -132,7 +108,7 @@ resource "aws_ecs_service" "blue" {
 }
 
 # ═════════════════════════════════════════════════════
-# GREEN SERVICE
+# ECS SERVICE - GREEN
 # ═════════════════════════════════════════════════════
 resource "aws_ecs_service" "green" {
   name            = "${local.name_prefix}-green"
