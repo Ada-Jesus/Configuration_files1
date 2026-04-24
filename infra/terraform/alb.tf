@@ -2,7 +2,10 @@
 #  alb.tf  –  Application Load Balancer, listeners, target groups
 # ═══════════════════════════════════════════════════════════════════
 
-# ── S3 bucket for ALB access logs ────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# S3 LOG BUCKET
+# ═══════════════════════════════════════════════════════════════════
+
 resource "aws_s3_bucket" "alb_logs" {
   bucket        = "${local.name_prefix}-alb-logs-${data.aws_caller_identity.current.account_id}"
   force_destroy = false
@@ -24,7 +27,10 @@ resource "aws_s3_bucket_policy" "alb_logs" {
   })
 }
 
-# ── Application Load Balancer ─────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# APPLICATION LOAD BALANCER
+# ═══════════════════════════════════════════════════════════════════
+
 resource "aws_lb" "main" {
   name               = "${local.name_prefix}-alb"
   internal           = false
@@ -42,10 +48,13 @@ resource "aws_lb" "main" {
   }
 }
 
-# ── Target groups (Blue & Green) ──────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# TARGET GROUP - BLUE
+# ═══════════════════════════════════════════════════════════════════
+
 resource "aws_lb_target_group" "blue" {
   name        = "${local.name_prefix}-blue-tg"
-  port        = var.container_port
+  port        = 8080
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
@@ -53,19 +62,27 @@ resource "aws_lb_target_group" "blue" {
   deregistration_delay = 60
 
   health_check {
-    path     = "/health"
-    matcher  = "200"
-    interval = 15
+    enabled             = true
+    path                = "/health"
+    matcher             = "200"
+    interval            = 15
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
   }
 
   lifecycle {
     create_before_destroy = true
   }
 }
+
+# ═══════════════════════════════════════════════════════════════════
+# TARGET GROUP - GREEN
+# ═══════════════════════════════════════════════════════════════════
 
 resource "aws_lb_target_group" "green" {
   name        = "${local.name_prefix}-green-tg"
-  port        = var.container_port
+  port        = 8080
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
@@ -73,9 +90,13 @@ resource "aws_lb_target_group" "green" {
   deregistration_delay = 60
 
   health_check {
-    path     = "/health"
-    matcher  = "200"
-    interval = 15
+    enabled             = true
+    path                = "/health"
+    matcher             = "200"
+    interval            = 15
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
   }
 
   lifecycle {
@@ -83,7 +104,10 @@ resource "aws_lb_target_group" "green" {
   }
 }
 
-# ── HTTP Listener (LIVE TRAFFIC) ──────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# HTTP LISTENER (LIVE TRAFFIC)
+# ═══════════════════════════════════════════════════════════════════
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
@@ -93,11 +117,12 @@ resource "aws_lb_listener" "http" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.blue.arn
   }
-
-  depends_on = [aws_lb.main]
 }
 
-# ── HTTPS Listener (optional) ─────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# HTTPS LISTENER (OPTIONAL)
+# ═══════════════════════════════════════════════════════════════════
+
 resource "aws_lb_listener" "https" {
   count             = var.certificate_arn != "" ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
@@ -112,7 +137,10 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# ── Test Listener (PIPELINE HEALTH CHECK) ─────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# TEST LISTENER (CI/CD HEALTH CHECK)
+# ═══════════════════════════════════════════════════════════════════
+
 resource "aws_lb_listener" "test" {
   load_balancer_arn = aws_lb.main.arn
   port              = 8080
@@ -122,11 +150,12 @@ resource "aws_lb_listener" "test" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.blue.arn
   }
-
-  depends_on = [aws_lb.main]
 }
 
-# ── 🔥 FIX: Green Target Group Listener Rule (required for ECS) ────
+# ═══════════════════════════════════════════════════════════════════
+# GREEN ROUTING RULE (BLUE/GREEN SWITCH LOGIC)
+# ═══════════════════════════════════════════════════════════════════
+
 resource "aws_lb_listener_rule" "green" {
   listener_arn = aws_lb_listener.http.arn
   priority     = 100
@@ -141,14 +170,12 @@ resource "aws_lb_listener_rule" "green" {
       values = ["/green/*"]
     }
   }
-
-  depends_on = [
-    aws_lb_listener.http,
-    aws_lb_target_group.green
-  ]
 }
 
-# ── Outputs ───────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# OUTPUTS
+# ═══════════════════════════════════════════════════════════════════
+
 output "alb_dns_name" {
   value = aws_lb.main.dns_name
 }

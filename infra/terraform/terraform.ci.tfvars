@@ -3,7 +3,6 @@ vpc_id = "vpc-0f686b508e3fef6ea"
 private_subnets = [
   "subnet-0f15bf0504c9be76f",
   "subnet-03c63fb99d0e54a5b",
-
 ]
 
 public_subnets = [
@@ -14,5 +13,9 @@ public_subnets = [
 
 ecr_image_uri = "121023050297.dkr.ecr.us-east-1.amazonaws.com/aspnet-api-production:latest"
 
+image_uri = "121023050297.dkr.ecr.us-east-1.amazonaws.com/aspnet-api-production:latest"
 api_key              = "ci-dummy"
 db_connection_string = "Server=ci;Database=ci;"
+
+container_name = "aspnet-api"
+container_port = 8080

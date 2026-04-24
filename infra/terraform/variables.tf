@@ -150,3 +150,8 @@ variable "db_connection_string" {
   sensitive = true
   default   = "Server=ci;Database=ci;User Id=ci;Password=ci;"
 }
+
+variable "image_uri" {
+  description = "ECR image URI for ECS task"
+  type        = string
+}
