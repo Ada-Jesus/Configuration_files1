@@ -53,18 +53,14 @@ resource "aws_lb_target_group" "blue" {
   deregistration_delay = 60
 
   health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 15
-    path                = "/health"
-    matcher             = "200"
+    path     = "/health"
+    matcher  = "200"
+    interval = 15
   }
 
-  tags = { Slot = "blue" }
-
-  depends_on = [aws_lb.main]
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_lb_target_group" "green" {
@@ -77,18 +73,14 @@ resource "aws_lb_target_group" "green" {
   deregistration_delay = 60
 
   health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 15
-    path                = "/health"
-    matcher             = "200"
+    path     = "/health"
+    matcher  = "200"
+    interval = 15
   }
 
-  tags = { Slot = "green" }
-
-  depends_on = [aws_lb.main]
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # ── HTTP Listener (LIVE TRAFFIC) ──────────────────────────────────

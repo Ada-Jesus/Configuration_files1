@@ -52,22 +52,14 @@ resource "aws_ecs_task_definition" "app" {
       image     = var.ecr_image_uri
       essential = true
 
-      portMappings = [
-        {
-          containerPort = var.container_port
-          protocol      = "tcp"
-        }
-      ]
+      portMappings = [{
+        containerPort = var.container_port
+        protocol      = "tcp"
+      }]
 
       environment = [
-        {
-          name  = "ASPNETCORE_ENVIRONMENT"
-          value = var.environment
-        },
-        {
-          name  = "ASPNETCORE_URLS"
-          value = "http://+:${var.container_port}"
-        }
+        { name = "ASPNETCORE_ENVIRONMENT", value = var.environment },
+        { name = "ASPNETCORE_URLS", value = "http://+:${var.container_port}" }
       ]
 
       secrets = [
@@ -105,11 +97,9 @@ resource "aws_ecs_service" "blue" {
   launch_type   = "FARGATE"
 
   network_configuration {
-    subnets         = var.private_subnets
-    security_groups = [aws_security_group.ecs_tasks.id]
-
-    # ✅ FINAL STABLE MODE (NO INTERNET REQUIRED)
-    assign_public_ip = false
+    subnets          = var.public_subnets
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -121,10 +111,6 @@ resource "aws_ecs_service" "blue" {
   deployment_circuit_breaker {
     enable   = true
     rollback = true
-  }
-
-  lifecycle {
-    ignore_changes = [task_definition]
   }
 }
 # ═══════════════════════════════════════════════════════════════════
@@ -139,11 +125,9 @@ resource "aws_ecs_service" "green" {
   launch_type   = "FARGATE"
 
   network_configuration {
-    subnets         = var.private_subnets
-    security_groups = [aws_security_group.ecs_tasks.id]
-
-    # ✅ FINAL STABLE MODE (NO INTERNET REQUIRED)
-    assign_public_ip = false
+    subnets          = var.public_subnets
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -155,13 +139,6 @@ resource "aws_ecs_service" "green" {
   deployment_circuit_breaker {
     enable   = true
     rollback = true
-  }
-
-  lifecycle {
-    ignore_changes = [
-      task_definition,
-      desired_count
-    ]
   }
 }
 # ═══════════════════════════════════════════════════════════════════
