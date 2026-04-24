@@ -5,21 +5,6 @@
 # ── CloudWatch Log Group ──────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════
 # ECS FIXED CONFIG – BLUE/GREEN + SSM SAFE
-# ═══════════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════════
-#  ecs.tf  – ECS cluster, task definition, blue & green services
-# ═══════════════════════════════════════════════════════════════════
-
-# ── CloudWatch Log Group ──────────────────────────────────────────
-# ═══════════════════════════════════════════════════════════════
-# CloudWatch Log Group
-# ═══════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════════
-# CLOUDWATCH LOG GROUP
-# ═══════════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════════
-# CLOUDWATCH LOG GROUP
-# ═══════════════════════════════════════════════════════════════════
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${local.name_prefix}"
   retention_in_days = var.log_retention_days
@@ -48,7 +33,7 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 }
 
 # ═══════════════════════════════════════════════════════════════════
-# TASK DEFINITION (SSM ENABLED)
+# TASK DEFINITION
 # ═══════════════════════════════════════════════════════════════════
 resource "aws_ecs_task_definition" "app" {
   family                   = local.name_prefix
@@ -85,7 +70,6 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
 
-      # SSM SECRETS (WORKS NOW BECAUSE ENDPOINTS ARE IN vpc_endpoints.tf)
       secrets = [
         {
           name      = "ConnectionStrings__Default"
@@ -124,7 +108,8 @@ resource "aws_ecs_service" "blue" {
     subnets         = var.private_subnets
     security_groups = [aws_security_group.ecs_tasks.id]
 
-    assign_public_ip = false
+    # ⚠️ TEMP FIX (needed for SSM + ECR access)
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -158,7 +143,8 @@ resource "aws_ecs_service" "green" {
     subnets         = var.private_subnets
     security_groups = [aws_security_group.ecs_tasks.id]
 
-    assign_public_ip = false
+    # ⚠️ TEMP FIX (needed for SSM + ECR access)
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -173,7 +159,10 @@ resource "aws_ecs_service" "green" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count]
+    ignore_changes = [
+      task_definition,
+      desired_count
+    ]
   }
 }
 
