@@ -2,45 +2,16 @@
 # ECS CLUSTER
 # ═════════════════════════════════════════════════════
 resource "aws_ecs_cluster" "main" {
-  name = "${local.name_prefix}"
+  name = local.name_prefix
 }
 
-# ═════════════════════════════════════════════════════
-# CLOUDWATCH LOG GROUP
-# ═════════════════════════════════════════════════════
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${local.name_prefix}"
   retention_in_days = 7
 }
 
-# ═════════════════════════════════════════════════════
-# IAM EXECUTION ROLE
-# ═════════════════════════════════════════════════════
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${local.name_prefix}-task-exec-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_exec_attach" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-# ═════════════════════════════════════════════════════
-# TASK DEFINITION (FIXED IMAGE HERE)
-# ═════════════════════════════════════════════════════
 resource "aws_ecs_task_definition" "app" {
-  family                   = "${local.name_prefix}"
+  family                   = local.name_prefix
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
@@ -51,28 +22,18 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name  = "aspnet-api"
-
-      # ✅ FIXED IMAGE (NO VAR ANYMORE)
-      image = "id.dkr.ecr.us-east-1.amazonaws.com/aspnet-api-production:30"
+      image = var.image_uri
 
       essential = true
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+      portMappings = [{
+        containerPort = 8080
+      }]
 
       environment = [
         {
           name  = "ASPNETCORE_ENVIRONMENT"
           value = "production"
-        },
-        {
-          name  = "ASPNETCORE_URLS"
-          value = "http://+:8080"
         }
       ]
 
@@ -88,9 +49,6 @@ resource "aws_ecs_task_definition" "app" {
   ])
 }
 
-# ═════════════════════════════════════════════════════
-# BLUE SERVICE
-# ═════════════════════════════════════════════════════
 resource "aws_ecs_service" "blue" {
   name            = "${local.name_prefix}-blue"
   cluster         = aws_ecs_cluster.main.id
@@ -111,9 +69,6 @@ resource "aws_ecs_service" "blue" {
   }
 }
 
-# ═════════════════════════════════════════════════════
-# GREEN SERVICE
-# ═════════════════════════════════════════════════════
 resource "aws_ecs_service" "green" {
   name            = "${local.name_prefix}-green"
   cluster         = aws_ecs_cluster.main.id
