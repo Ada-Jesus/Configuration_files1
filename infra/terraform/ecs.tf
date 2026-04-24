@@ -108,8 +108,8 @@ resource "aws_ecs_service" "blue" {
     subnets         = var.private_subnets
     security_groups = [aws_security_group.ecs_tasks.id]
 
-    # ⚠️ TEMP FIX (needed for SSM + ECR access)
-    assign_public_ip = true
+    # ✅ FINAL STABLE MODE (NO INTERNET REQUIRED)
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -127,7 +127,6 @@ resource "aws_ecs_service" "blue" {
     ignore_changes = [task_definition]
   }
 }
-
 # ═══════════════════════════════════════════════════════════════════
 # ECS SERVICE - GREEN
 # ═══════════════════════════════════════════════════════════════════
@@ -143,8 +142,8 @@ resource "aws_ecs_service" "green" {
     subnets         = var.private_subnets
     security_groups = [aws_security_group.ecs_tasks.id]
 
-    # ⚠️ TEMP FIX (needed for SSM + ECR access)
-    assign_public_ip = true
+    # ✅ FINAL STABLE MODE (NO INTERNET REQUIRED)
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -165,7 +164,6 @@ resource "aws_ecs_service" "green" {
     ]
   }
 }
-
 # ═══════════════════════════════════════════════════════════════════
 # OUTPUTS
 # ═══════════════════════════════════════════════════════════════════
