@@ -21,7 +21,7 @@ env:
 jobs:
 
   terraform-plan:
-    name: Terraform Plan
+    name: 📋 Terraform Plan
     runs-on: ubuntu-latest
 
     defaults:
@@ -42,11 +42,10 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      #  FORCE S3 STATE CONNECTION
+      # INIT WITH S3 BACKEND CONFIG (NOW REQUIRED BECAUSE i USE backend "s3 {}")
       - name: Terraform Init
         run: |
-          terraform init \
-            -reconfigure \
+          terraform init -reconfigure \
             -backend-config="bucket=aspnet-api-tfstate-prod-2026-unique" \
             -backend-config="key=terraform.tfstate" \
             -backend-config="region=us-east-1"
@@ -63,7 +62,7 @@ jobs:
 
 
   terraform-apply:
-    name: 🚀 Terraform Apply
+    name:  Terraform Apply
     runs-on: ubuntu-latest
     needs: terraform-plan
 
@@ -85,11 +84,10 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # BACKEND FIX 
+      # SAME BACKEND INIT 
       - name: Terraform Init
         run: |
-          terraform init \
-            -reconfigure \
+          terraform init -reconfigure \
             -backend-config="bucket=aspnet-api-tfstate-prod-2026-unique" \
             -backend-config="key=terraform.tfstate" \
             -backend-config="region=us-east-1"
