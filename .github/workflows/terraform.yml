@@ -21,7 +21,7 @@ env:
 jobs:
 
   terraform-plan:
-    name: 📋 Terraform Plan
+    name: Terraform Plan
     runs-on: ubuntu-latest
 
     defaults:
@@ -42,7 +42,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # INIT WITH S3 BACKEND CONFIG (NOW REQUIRED BECAUSE i USE backend "s3 {}")
       - name: Terraform Init
         run: |
           terraform init -reconfigure \
@@ -84,7 +83,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # SAME BACKEND INIT 
       - name: Terraform Init
         run: |
           terraform init -reconfigure \
