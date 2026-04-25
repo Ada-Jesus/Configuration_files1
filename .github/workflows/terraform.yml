@@ -15,7 +15,7 @@ env:
 
 jobs:
 
-# --- PLAN ------
+# --- PLAN ---
   terraform-plan:
     name: 📋 Terraform Plan
     runs-on: ubuntu-latest
